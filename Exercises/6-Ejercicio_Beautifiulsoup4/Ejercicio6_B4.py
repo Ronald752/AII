@@ -9,7 +9,7 @@ import re   # libreria para trabajar con expresiones regulares
 import os, ssl  # librerias para evitar problemas con certificados SSL
 
 '''
-Este bloque asegura que se pueda acceder a paginas web con certificados SSL sin problemas, ya que en ocasiones se pueden  
+Este bloque asegura que se pueda acceder a paginas web con certificados SSL sin problemas, ya que en ocasiones se pueden presentar errores
 '''
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
 getattr(ssl, '_create_unverified_context', None)):

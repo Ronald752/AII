@@ -14,7 +14,7 @@ getattr(ssl, '_create_unverified_context', None)):
     ssl._create_default_https_context = ssl._create_unverified_context
 
 def cargar():
-    respuesta = messagebox.askyesno(title="Confirmar",message="Esta seguro que quiere recargar los datos. \nEsta operaciÃ³n puede ser lenta")
+    respuesta = messagebox.askyesno(title="Confirmar",message="Esta seguro que quiere recargar los datos. \nEsta operacion puede ser lenta")
     if respuesta:
         almacenar_bd()
 
@@ -40,7 +40,7 @@ def almacenar_bd():
         s = BeautifulSoup(f, "lxml")
         datos = s.find("main", class_="informativo").find("section",class_="highlight").div.dl
         titulo_original = datos.find("dt",string="Título original").find_next_sibling("dd").string.strip()
-        #si no tiene tÃ­tulo se pone el tÃ­tulo original
+        #si no tiene título se pone el tÃ­tulo original
         if (datos.find("dt",string="Titulo")):
             titulo = datos.find("dt",string="Titulo").find_next_sibling("dd").string.strip()
         else:
