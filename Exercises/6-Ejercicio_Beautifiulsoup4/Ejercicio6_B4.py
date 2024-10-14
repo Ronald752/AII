@@ -2,42 +2,48 @@
 
 import sqlite3
 from bs4 import BeautifulSoup
-import urllib.request
+import urllib.request   # libreria para realizar peticiones HTTP a paginas web
 from tkinter import *
 from tkinter import messagebox
-import re
-import os, ssl
+import re   # libreria para trabajar con expresiones regulares
+import os, ssl  # librerias para evitar problemas con certificados SSL
+
+'''
+Este bloque asegura que se pueda acceder a paginas web con certificados SSL sin problemas, ya que en ocasiones se pueden  
+'''
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
 getattr(ssl, '_create_unverified_context', None)):
     ssl._create_default_https_context = ssl._create_unverified_context
 
 
 def extraer_jornadas():
-    f = urllib.request.urlopen("http://resultados.as.com/resultados/futbol/primera/2023_2024/calendario/")
-    s = BeautifulSoup(f,"lxml")
-    
-    l = s.find_all("div", class_= ["cont-modulo","resultados"])
+    f = urllib.request.urlopen("http://resultados.as.com/resultados/futbol/primera/2023_2024/calendario/")  # Realizamos la petición a la web y nos da el html de la página
+    s = BeautifulSoup(f,"lxml") # Leemos el html con BeautifulSoup y le decimos que lo analice con lxml 
+    l = s.find_all("div", class_= ["cont-modulo","resultados"]) # Buscamos todas las etiquetas div con clase cont-modulo y resultados. Deben cumplirse ambas condiciones.
     return l
-
-
-def imprimir_lista(cursor):
-    v = Toplevel()
-    sc = Scrollbar(v)
-    sc.pack(side=RIGHT, fill=Y)
-    lb = Listbox(v, width = 150, yscrollcommand=sc.set)
+'''
+Función para imprimir la lista de partidos, recibiendo sus datos como parámetro con formato de tupla
+Piensa que es como si estuvieras añadiendo cada parte del html dinamicamente
+'''
+def imprimir_lista(cursor):    
+    v = Toplevel()              # Creamos una ventana secundaria
+    sc = Scrollbar(v)           # Creamos una barra de desplazamiento vertical
+    sc.pack(side=RIGHT, fill=Y) # Coloca la barra de desplazamiento a la derecha y la hace visible.
+    lb = Listbox(v, width = 150, yscrollcommand=sc.set) # Creamos una lista con scroll vertical y le damos un ancho de 150 caracteres
     jornada=0
-    for row in cursor:
-        if row[0] != jornada:
-            jornada=row[0]
-            lb.insert(END,"\n")
-            s = 'JORNADA '+ str(jornada)
-            lb.insert(END,s)
+    for row in cursor:         # Recorremos la lista de partidos
+        if row[0] != jornada:   # El primer valor de la tupla es la jornada
+            jornada=row[0]      # Actualizamos el valor de la jornada
+            lb.insert(END,"\n") # Insertamos un salto de línea
+            s = 'JORNADA '+ str(jornada)    
+            lb.insert(END,s)     # Insertamos el número de jornada en 
             lb.insert(END,"-----------------------------------------------------")
-        s = "     " + row[1] +' '+ str(row[3]) +'-'+ str(row[4]) +' '+  row[2]
-        lb.insert(END,s)
-    lb.pack(side=LEFT,fill=BOTH)
-    sc.config(command = lb.yview)
+        s = "     " + row[1] +' '+ str(row[3]) +'-'+ str(row[4]) +' '+  row[2]  # Formateamos la cadena con los datos del partido, dando como resultado: NOMBRE EQUIPO LOCAL GOLES EQUIPO LOCAL - GOLES EQUIPO VISITANTE NOMBRE EQUIPO VISITANTE
+        lb.insert(END,s) 
+    lb.pack(side=LEFT,fill=BOTH)    # Muestra la lista en el lado izquierdo de la ventana, llenando el espacio disponible.
+    sc.config(command = lb.yview)   # Configura la barra de desplazamiento para que se mueva en función de la lista de partidos.
  
+
 def almacenar_bd():
     conn = sqlite3.connect('as.db')
     conn.text_factory = str  # para evitar problemas con el conjunto de caracteres que maneja la BD
@@ -72,18 +78,22 @@ def almacenar_bd():
 
 
 def listar_bd():
-    conn = sqlite3.connect('as.db')
-    conn.text_factory = str  
-    cursor = conn.execute("SELECT * FROM JORNADAS ORDER BY JORNADA")
+    conn = sqlite3.connect('as.db') #conexión con la base de datos
+    conn.text_factory = str      # para evitar problemas con el conjunto de caracteres que maneja la BD
+    cursor = conn.execute("SELECT * FROM JORNADAS ORDER BY JORNADA")    #seleccionamos todos los registros de la tabla JORNADAS
     imprimir_lista(cursor)
-    conn.close()
+    conn.close()    #cerramos la conexión con la base de datos
     
 
+'''
+Internamente usa el parámetro que brinda el usuario y hace búsqueda en la base de datos
+Luego lo muestra usando la función imprimir_lista
+'''
 def buscar_jornada():
     def listar_busqueda(event):
         conn = sqlite3.connect('as.db')
         conn.text_factory = str
-        s =  int(en.get())
+        s =  int(en.get())  #obtenemos el valor de la jornada seleccionada  
         cursor = conn.execute("""SELECT * FROM JORNADAS WHERE JORNADA = ?""",(s,)) 
         imprimir_lista(cursor)       
         conn.close()
@@ -95,13 +105,16 @@ def buscar_jornada():
     conn.close()
     
     v = Toplevel()
-    lb = Label(v, text="Seleccione la jornada: ")
+    lb = Label(v, text="Seleccione la jornada: ")   # etiqueta para indicar que se debe seleccionar la jornada
     lb.pack(side = LEFT)
-    en = Spinbox(v,values=valores,state="readonly")
-    en.bind("<Return>", listar_busqueda)
-    en.pack(side = LEFT)
+    en = Spinbox(v,values=valores,state="readonly") #spinbox(aumentar y disminuir los valores de entrada) para seleccionar la jornada
+    en.bind("<Return>", listar_busqueda)    #cuando se presiona la tecla Enter se invoca la función listar_busqueda
+    en.pack(side = LEFT)   #se coloca la spinbox en la ventana secundaria
 
-
+'''
+Se pretende obtener las estadísticas de una jornada en concreto
+como el total de goles, empates, victorias locales y visitantes
+'''
 def estadistica_jornada():
     def listar_estadistica(event):
         conn = sqlite3.connect('as.db')
@@ -110,6 +123,7 @@ def estadistica_jornada():
         cursor = conn.execute("""SELECT SUM(GOLES_L)+SUM(GOLES_V) FROM JORNADAS WHERE JORNADA = ?""",(s,)) 
         total_goles = cursor.fetchone()[0]
         cursor = conn.execute("""SELECT GOLES_L,GOLES_V FROM JORNADAS WHERE JORNADA = ?""",(s,))
+        # inicializamos las variables para contar los empates, victorias locales y visitantes
         empates=0
         locales=0
         visitantes=0
@@ -124,7 +138,7 @@ def estadistica_jornada():
         
         s = "TOTAL GOLES JORNADA : " + str(total_goles)+ "\n\n" + "EMPATES : " + str(empates) + "\n" + "VICTORIAS LOCALES : " + str(locales) + "\n" + "VICTORIAS VISITANTES : " + str(visitantes)
         v = Toplevel()
-        lb = Label(v, text=s) 
+        lb = Label(v, text=s)   #etiqueta con las estadísticas de la jornada , metemos en la ventana secundaria los datos estadísticos de la jornada
         lb.pack()
         
     conn = sqlite3.connect('as.db')
@@ -142,7 +156,10 @@ def estadistica_jornada():
     
 
 
-   
+'''
+Elijo una jornada, luego se actualizan los equipos que eran locales en esa jornada
+y se actualiza el equipo visitante en función de la jornada y el equipo local
+'''
 def buscar_goles():
     
     def mostrar_equipo_l():
@@ -150,7 +167,7 @@ def buscar_goles():
         conn = sqlite3.connect('as.db')
         conn.text_factory = str
         cursor= conn.execute("""SELECT LOCAL FROM JORNADAS WHERE JORNADA=? """,(int(en_j.get()),))
-        en_l.config(values=[i[0] for i in cursor])
+        en_l.config(values=[i[0] for i in cursor])  #actualiza los valores de la spinbox de equipos locales 
         conn.close()
         
     def mostrar_equipo_v():
@@ -232,7 +249,7 @@ def ventana_principal():
     listar.pack(side = TOP)
     Buscar = Button(top, text="Buscar Jornada", command = buscar_jornada)
     Buscar.pack(side = TOP)
-    Buscar = Button(top, text="EstadÃ­sticas Jornada", command = estadistica_jornada)
+    Buscar = Button(top, text="Estadísticas Jornada", command = estadistica_jornada)
     Buscar.pack(side = TOP)
     Buscar = Button(top, text="Buscar Goles", command = buscar_goles)
     Buscar.pack(side = TOP)
