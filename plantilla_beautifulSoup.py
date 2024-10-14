@@ -15,6 +15,10 @@ import os, ssl  # librerias para evitar problemas con certificados SSL
 '''
 PASOS PARA EL DESARROLLO DEL EJERCICIO1
 1. Crear la base de datos(averiguar que datos se pueden obtener de la web base)
+TAREAS ESENCIALES PARA REPARTIR:
+A. Observar la web y ver que datos se pueden obtener
+B. Crear el formato tkinter pedido.
+
 
 Si la web tiene elementos con paginación, tener en cuenta el ejercicio 5_B3
 '''
